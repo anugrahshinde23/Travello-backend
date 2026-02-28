@@ -83,3 +83,28 @@ async def book_seat(data: Booking, user=Depends(role_required('user'))):
         "booking_id": str(result.inserted_id),
         "total_amount": total_amount
     }
+
+@router.get('/get-user-bookings')
+async def getUserBookings(user=Depends(role_required('user'))) : 
+
+    cursor = db.bookings.find({
+        "user_id" : user["user_id"]
+    })
+    booking = await cursor.to_list()
+
+    
+
+    if(not booking) : 
+       raise HTTPException(status_code=400, detail="Booking not found")
+
+
+    for b in booking :
+        b["_id"] = str(b["_id"])
+    
+
+
+    return {
+        "success":True,
+        "message" : "Successfully fetched user bookings",
+        "booking" : booking
+    }

@@ -7,9 +7,22 @@ from app.db.database import db
 from bson import ObjectId
 from datetime import datetime, time, timedelta, timezone
 from fastapi.responses import FileResponse 
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 
 router = APIRouter(prefix='/payment', tags=['Payment'])
 
+mail_conf = ConnectionConfig(
+    MAIL_USERNAME = "sandeshshinde43210@gmail.com",
+    MAIL_PASSWORD = "sfay yaxv bwfy ujht",
+    MAIL_FROM = "sandeshshinde43210@gmail.com",
+    MAIL_FROM_NAME="Travello",
+    MAIL_PORT = 587,
+    MAIL_SERVER = "smtp.gmail.com",
+    MAIL_STARTTLS = True,
+    MAIL_SSL_TLS = False,
+    USE_CREDENTIALS = True,
+    VALIDATE_CERTS = True
+)
 
 @router.post('/create-payment')
 async def createPayment(payment: Payment, user=Depends(role_required('user'))):
@@ -53,7 +66,7 @@ async def createPayment(payment: Payment, user=Depends(role_required('user'))):
 
     return {
         "success": True,
-        "message": "Payment Done",
+        "message": "Payment Done and Email send",
         "payment_id": str(payment_id),
         "amount" : amount
     }
@@ -77,6 +90,17 @@ async def verify_payment(payment: VerifyPayment):
     booking_data = await db.bookings.find_one({"_id": ObjectId(booking_id)})
     if not booking_data:
         raise HTTPException(status_code=404, detail="Booking not found")
+    
+     # 2. FETCH USER INFO (Naya Step)
+    user_id = booking_data.get("user_id")
+    # Agar user_id string hai toh ObjectId mein convert karein
+    user_data = await db.users.find_one({"_id": ObjectId(user_id)})
+    
+    if not user_data:
+        raise HTTPException(status_code=404, detail="User not found for this booking")
+
+    user_email = user_data.get("email") # Jo bhi field name aapne DB mein rakha ho
+    user_name = user_data.get("name")
 
     # 3. Generate Ticket Info
     ticket_no = generate_ticket_number()
@@ -87,6 +111,19 @@ async def verify_payment(payment: VerifyPayment):
     try:
         # 4. Create PDF
         file_path = create_ticket_pdf(booking_data)
+
+        try:
+           message = MessageSchema(
+            subject=f"Ticket Confirmed - {ticket_no}",
+            recipients=[user_email], # DB se nikala hua email
+            body=f"Hi {user_name}, Your ticket is successfully generated.",
+            attachments=[file_path],
+            subtype=MessageType.html
+            )
+           fm = FastMail(mail_conf)
+           await fm.send_message(message)
+        except Exception as e:
+         print(f"Email sending failed: {e}")
         
         # 5. Atomic Update (One call to rule them all)
         await db.bookings.update_one(
@@ -138,4 +175,3 @@ async def downloadTicket(booking_id: str):
 
 
 
-    
