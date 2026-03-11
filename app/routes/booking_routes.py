@@ -110,36 +110,37 @@ async def getUserBookings(user=Depends(role_required('user'))) :
     }
 
 
+
+
 @router.get('/get-all-bookings')
 async def getAllBookings(user=Depends(role_required('admin'))) : 
 
     cursor = db.bookings.find()
     booking = await cursor.to_list()
 
-    if(not booking) : 
+    if not booking:
         raise HTTPException(status_code=400, detail="Bookings not found")
     
-    for b in booking : 
+    for b in booking:
         b["_id"] = str(b["_id"])
 
         user_data = await db.users.find_one({
-            "_id" : b["user_id"]
+            "_id": ObjectId(b["user_id"])
         })
-        if user_data : 
+
+        if user_data:
             b["user_name"] = user_data.get("name")
             b["user_email"] = user_data.get("email")
 
-        
-
         payment_data = await db.payments.find_one({
-            "_id" : b["payment_id"]
+            "_id": ObjectId(b["payment_id"])
         })
 
-        if payment_data : 
+        if payment_data:
             b["status"] = payment_data.get("status")
 
     return {
-        "success" : True,
-        "message" : "Successfully fetched bookings",
-        "bookings" : booking 
+        "success": True,
+        "message": "Successfully fetched bookings",
+        "bookings": booking
     }
