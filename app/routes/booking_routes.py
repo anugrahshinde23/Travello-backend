@@ -122,6 +122,24 @@ async def getAllBookings(user=Depends(role_required('admin'))) :
     for b in booking : 
         b["_id"] = str(b["_id"])
 
+        user_data = await db.users.find_one({
+            "_id" : b["user_id"]
+        })
+        if user_data : 
+            b["user_name"] = user_data.get("name")
+            b["user_email"] = user_data.get("email")
+
+        trip_data = await db.trips.find_one({
+            "_id" : b["trip_id"]
+        })
+
+        payment_data = await db.payments.find_one({
+            "_id" : b["payment_id"]
+        })
+
+        if payment_data : 
+            b["status"] = payment_data.get("status")
+
     return {
         "success" : True,
         "message" : "Successfully fetched bookings",
