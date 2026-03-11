@@ -129,9 +129,7 @@ async def getAllBookings(user=Depends(role_required('admin'))) :
             b["user_name"] = user_data.get("name")
             b["user_email"] = user_data.get("email")
 
-        trip_data = await db.trips.find_one({
-            "_id" : b["trip_id"]
-        })
+        
 
         payment_data = await db.payments.find_one({
             "_id" : b["payment_id"]
