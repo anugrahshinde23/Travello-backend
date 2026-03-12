@@ -79,6 +79,7 @@ async def getAllSearchTrips(sTrip: SearchTrip = Depends()):
             }
         },
         {"$unwind": "$bus_details"},
+       
         {
             "$lookup": {
                 "from": "routes",
@@ -87,7 +88,17 @@ async def getAllSearchTrips(sTrip: SearchTrip = Depends()):
                 "as": "route_details"
             }
         },
-        {"$unwind": "$route_details"}
+        {"$unwind": "$route_details"},
+        {
+        "$project": {
+            "_id": 1,
+            "date": 1,
+            "bus_name": "$bus_details.name",
+            "bus_type": "$bus_details.bus_type",
+            "route_name": "$route_details.route_name",
+    
+        }
+    }
     ]
 
     trips = await db.trips.aggregate(pipeline).to_list(None)
