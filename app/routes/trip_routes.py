@@ -118,11 +118,24 @@ async def getAllSearchTrips(sTrip: SearchTrip = Depends()):
 @router.get('/all-trips')
 async def getAllTrips(admin=Depends(role_required('admin'))):
     trips = await db.trips.find().to_list(None)
+    enriched_trips = []
+
     for trip in trips:
         trip["_id"] = str(trip["_id"])
         trip["bus_id"] = str(trip["bus_id"])
         trip["route_id"] = str(trip["route_id"])
-    return {"success": True, "message": "All trips fetched", "trip_data": trips}
+
+        # Fetch bus details using bus_id
+        bus = await db.buses.find_one({"_id": ObjectId(trip["bus_id"])})
+        if bus:
+            bus["_id"] = str(bus["_id"])
+            trip["bus_details"] = bus
+        else:
+            trip["bus_details"] = None
+
+        enriched_trips.append(trip)
+
+    return {"success": True, "message": "All trips fetched", "trip_data": enriched_trips}
 
 
 @router.patch('/update/{trip_id}')
