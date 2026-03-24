@@ -6,6 +6,7 @@ from app.routes import routes_routes
 from app.routes import trip_routes
 from app.routes import booking_routes
 from app.routes import payment_routes
+from app.routes import schema_design
 
 app = FastAPI()
 
@@ -15,6 +16,7 @@ app.include_router(routes_routes.router)
 app.include_router(trip_routes.router)
 app.include_router(booking_routes.router)
 app.include_router(payment_routes.router)
+app.include_router(schema_design.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,3 +29,4 @@ app.add_middleware(
 @app.get("/") 
 def home() : 
     return {"message" : "This is home page"}
+
